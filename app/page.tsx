@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   CloudSnow,
   Zap,
+  Menu,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +29,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import WeatherChart from "./components/weather-chart"
 import ErrorBoundary from "./components/error-boundary"
 import { parse, differenceInMinutes } from "date-fns"
@@ -129,6 +131,7 @@ export default function WeatherDashboard() {
   const [lastFetchedCity, setLastFetchedCity] = useState<string>("")
   const [showCoords, setShowCoords] = useState(false)
   const [customCity, setCustomCity] = useState("")
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   // Fix hydration mismatch by only setting time on client
   useEffect(() => {
@@ -382,6 +385,7 @@ export default function WeatherDashboard() {
   const handleNavigation = useCallback((viewId: string) => {
     setActiveView(viewId)
     setError(null)
+    setMobileNavOpen(false)
   }, [])
 
   const handleCityClick = useCallback(
@@ -624,12 +628,12 @@ export default function WeatherDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
                     <div>
-                      <div className="text-4xl font-bold mb-2">{getDayName()}</div>
-                      <div className="text-slate-400 mb-6">{getFormattedDate()}</div>
+                      <div className="text-3xl md:text-4xl font-bold mb-2">{getDayName()}</div>
+                      <div className="text-slate-400 mb-4 md:mb-6">{getFormattedDate()}</div>
 
-                      <div className="text-6xl font-bold mb-2">
+                      <div className="text-5xl md:text-6xl font-bold mb-2">
                         {convertTemp(weatherData.temperature)}°{tempUnit}
                       </div>
                       <div className="text-slate-400">
@@ -680,7 +684,7 @@ export default function WeatherDashboard() {
                 <CardHeader>
                   <CardTitle>Temperature & Humidity Trends</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="overflow-hidden p-3 sm:p-6">
                   <ErrorBoundary>
                     <WeatherChart data={chartData} tempUnit={tempUnit} />
                   </ErrorBoundary>
@@ -722,7 +726,7 @@ export default function WeatherDashboard() {
                   <CardTitle>Today Highlight</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-lg bg-slate-700/50">
                       <div className="text-sm text-slate-400 mb-2">UV Index</div>
                       <div className="flex items-center gap-2">
@@ -866,69 +870,93 @@ export default function WeatherDashboard() {
     )
   }
 
+  // Reusable sidebar nav content
+  const SidebarNav = () => (
+    <>
+      <div className="p-6">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+            <Cloud className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-bold text-white">SkySense</span>
+        </div>
+      </div>
+      <nav className="px-4 space-y-2">
+        {sidebarItems.map((item) => (
+          <button
+            key={item.label}
+            onClick={() => handleNavigation(item.id)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+              activeView === item.id
+                ? "bg-purple-600/20 text-purple-300 border border-purple-600/30"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/50"
+            }`}
+          >
+            <item.icon className="w-5 h-5" />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </>
+  )
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="flex w-full min-h-screen">
-          {/* Fixed Sidebar */}
-          <div className="w-64 bg-slate-900/50 border-r border-slate-700/50 flex-shrink-0">
-            <div className="p-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                  <Cloud className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-white">SkySense</span>
-              </div>
-            </div>
-            <nav className="px-4 space-y-2">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => handleNavigation(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                    activeView === item.id
-                      ? "bg-purple-600/20 text-purple-300 border border-purple-600/30"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800/50"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
+          {/* Fixed Sidebar — hidden on mobile */}
+          <div className="hidden md:flex md:w-64 bg-slate-900/50 border-r border-slate-700/50 flex-shrink-0 flex-col">
+            <SidebarNav />
           </div>
+
+          {/* Mobile Sidebar Drawer */}
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetContent side="left" className="w-64 p-0 bg-slate-900 border-slate-700">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              <SidebarNav />
+            </SheetContent>
+          </Sheet>
 
           {/* Main Content */}
           <div className="flex-1 flex flex-col min-w-0">
             {/* Header */}
-            <header className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-900/30">
-              <div className="flex items-center gap-4">
-                <form onSubmit={handleSearch} className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <Input
-                      type="text"
-                      placeholder="Search City..."
-                      value={searchCity}
-                      onChange={(e) => setSearchCity(e.target.value)}
-                      disabled={loading}
-                      className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 w-64"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={loading || !searchCity.trim()}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
-                  </Button>
-                </form>
-              </div>
+            <header className="flex items-center justify-between p-4 md:p-6 border-b border-slate-700/50 bg-slate-900/30 gap-3">
+              {/* Hamburger — mobile only */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden text-slate-300 hover:text-white flex-shrink-0"
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Open navigation menu"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+
+              <form onSubmit={handleSearch} className="flex items-center gap-2 flex-1 md:flex-none">
+                <div className="relative flex-1 md:flex-none">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search City..."
+                    value={searchCity}
+                    onChange={(e) => setSearchCity(e.target.value)}
+                    disabled={loading}
+                    className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 w-full md:w-64"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={loading || !searchCity.trim()}
+                  className="bg-purple-600 hover:bg-purple-700 flex-shrink-0"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
+                </Button>
+              </form>
             </header>
 
             {/* Dynamic Content */}
-            <main className="flex-1 overflow-hidden">{renderContent()}</main>
+            <main className="flex-1 overflow-auto">{renderContent()}</main>
           </div>
         </div>
       </div>

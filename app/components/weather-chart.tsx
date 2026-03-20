@@ -1,8 +1,9 @@
 "use client"
 
-import { Line, LineChart, XAxis, YAxis, ResponsiveContainer } from "recharts"
+import { Line, LineChart, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Legend } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import React from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface WeatherChartProps {
   data: Array<{
@@ -15,6 +16,8 @@ interface WeatherChartProps {
 }
 
 function WeatherChart({ data, tempUnit }: WeatherChartProps) {
+  const isMobile = useIsMobile()
+  
   const convertTemp = (temp: number) => {
     if (tempUnit === "F") {
       return Math.round((temp * 9) / 5 + 32)
@@ -28,24 +31,39 @@ function WeatherChart({ data, tempUnit }: WeatherChartProps) {
     humidity: item.humidity,
   }))
 
+  // On mobile, only show ticks every 3 or 4 hours to prevent overlapping
+  const xAxisInterval = isMobile ? 3 : 0
+
   return (
+    <div className="w-full overflow-hidden">
     <ChartContainer
       config={{
         temperature: {
-          label: `Temperature (°${tempUnit})`,
+          label: `Temp (°${tempUnit})`,
           color: "hsl(var(--chart-1))",
         },
         humidity: {
-          label: "Humidity (%)",
+          label: "Hum (%)",
           color: "hsl(var(--chart-2))",
         },
       }}
-      className="h-[300px]"
+      className="h-[250px] sm:h-[300px] w-full"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData}>
-          <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+        <LineChart data={chartData} margin={isMobile ? { top: 10, right: 10, left: -20, bottom: 0 } : { top: 20, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+          <XAxis 
+            dataKey="time" 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fill: "#94a3b8", fontSize: isMobile ? 10 : 12 }}
+            interval={xAxisInterval}
+          />
+          <YAxis 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fill: "#94a3b8", fontSize: isMobile ? 10 : 12 }}
+          />
           <ChartTooltip
             content={<ChartTooltipContent />}
             contentStyle={{
@@ -55,27 +73,29 @@ function WeatherChart({ data, tempUnit }: WeatherChartProps) {
               color: "#f1f5f9",
             }}
           />
+          {!isMobile && <Legend verticalAlign="top" height={36}/>}
           <Line
-            type="linear"
+            type="monotone"
             dataKey="temperature"
             stroke="var(--color-temperature)"
-            strokeWidth={3}
-            dot={{ fill: "var(--color-temperature)", strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: "var(--color-temperature)", strokeWidth: 2 }}
+            strokeWidth={isMobile ? 2 : 3}
+            dot={false}
+            activeDot={{ r: 4, stroke: "var(--color-temperature)", strokeWidth: 2 }}
             isAnimationActive={false}
           />
           <Line
-            type="linear"
+            type="monotone"
             dataKey="humidity"
             stroke="var(--color-humidity)"
-            strokeWidth={3}
-            dot={{ fill: "var(--color-humidity)", strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: "var(--color-humidity)", strokeWidth: 2 }}
+            strokeWidth={isMobile ? 2 : 3}
+            dot={false}
+            activeDot={{ r: 4, stroke: "var(--color-humidity)", strokeWidth: 2 }}
             isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>
     </ChartContainer>
+    </div>
   )
 }
 
