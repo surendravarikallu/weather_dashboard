@@ -69,9 +69,24 @@ To use real weather data instead of mock data:
 3. Uncomment the real API implementation
 4. Add proper error handling for API failures
 
+### Testing
+
+SkySense uses **Jest** and `jest-environment-jsdom` for unit testing.
+
+To run the tests:
+```bash
+# Run Jest tests
+npm run test
+
+# Run tests with code coverage maps
+npm run test:coverage
+```
+
+For more details on configuration, see the **[Testing Documentation (docs/TESTING.md)](docs/TESTING.md)**.
+
 ### Project Structure
 
-\`\`\`
+```
 ├── app/
 │   ├── api/weather/          # Weather API endpoint
 │   ├── components/           # React components
@@ -79,9 +94,14 @@ To use real weather data instead of mock data:
 │   ├── layout.tsx           # Root layout
 │   └── page.tsx             # Main dashboard page
 ├── components/ui/           # shadcn/ui components
+├── docs/
+│   └── TESTING.md           # Testing documentation
+├── lib/
+│   ├── utils.ts             # Tailwind class merging utility
+│   └── utils.test.ts        # Unit tests for the utility
 ├── public/                  # Static assets
 └── README.md
-\`\`\`
+```
 
 ## API Integration
 
